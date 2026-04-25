@@ -42,3 +42,17 @@ res.send("OK");
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, ()=> console.log("Server running"));
+
+socket.onopen = () => {
+  console.log("✅ WebSocket connecté");
+};
+
+socket.onmessage = (msg)=>{
+  console.log("📩 reçu :", msg.data);
+
+  const data = JSON.parse(msg.data);
+
+  if(data.event==="start") start();
+  if(data.event==="add30") add30();
+  if(data.event==="reset") reset();
+};
