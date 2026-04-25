@@ -1,88 +1,101 @@
 const express = require("express");
-const http = require("http");
-const WebSocket = require("ws");
-
 const app = express();
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const cors = require("cors");
+const path = require("path");
 
-// Middleware
+app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
-// Stockage clients WebSocket
-let clients = [];
+// =====================
+// ⏱ TIMER STATE
+// =====================
 
-// Connexion WebSocket
-wss.on("connection", (ws) => {
-console.log("🔌 Client connecté");
-clients.push(ws);
+let time = 0;          // secondes restantes
+let running = false;
+let lastUpdate = Date.now();
 
-ws.on("close", () => {
-console.log("❌ Client déconnecté");
-clients = clients.filter(c => c !== ws);
-});
-});
+// =====================
+// 🧠 UPDATE TIMER
+// =====================
 
-// Fonction broadcast
-function broadcast(event){
-console.log("📡 Envoi :", event);
-clients.forEach(c => {
-if (c.readyState === WebSocket.OPEN) {
-c.send(JSON.stringify({ event }));
+function updateTimer(){
+if (!running) return;
+
+const now = Date.now();
+const diff = Math.floor((now - lastUpdate) / 1000);
+
+if (diff > 0) {
+time -= diff;
+lastUpdate = now;
+
+```
+if (time <= 0) {
+  time = 0;
+  running = false;
 }
-});
+```
+
+}
 }
 
-// =======================
-// ROUTES WEBHOOK
-// =======================
+// =====================
+// 🌐 GET STATE (overlay)
+// =====================
 
-// START TIMER
-app.get("/start", (req,res)=>{
-broadcast("start");
-res.send("OK");
+app.get("/state", (req,res)=>{
+updateTimer();
+
+res.json({
+time,
+running
 });
+});
+
+// =====================
+// ▶️ START (1 min)
+// =====================
 
 app.post("/start", (req,res)=>{
-broadcast("start");
-res.send("OK");
+time = 60;
+running = true;
+lastUpdate = Date.now();
+
+res.json({ ok:true });
 });
 
-// ADD 30 SECONDS
-app.get("/30", (req,res)=>{
-broadcast("add30");
-res.send("OK");
-});
+// =====================
+// ➕ +30 SECONDES
+// =====================
 
 app.post("/30", (req,res)=>{
-broadcast("add30");
-res.send("OK");
+updateTimer();
+time += 30;
+
+res.json({ ok:true });
 });
 
-// END TIMER
-app.get("/end", (req,res)=>{
-broadcast("reset");
-res.send("OK");
-});
+// =====================
+// ❌ END
+// =====================
 
 app.post("/end", (req,res)=>{
-broadcast("reset");
-res.send("OK");
+time = 0;
+running = false;
+
+res.json({ ok:true });
 });
 
-// =======================
-// ROUTE TEST
-// =======================
-app.get("/", (req,res)=>{
-res.send("Timer server OK");
-});
+// =====================
+// 🚀 SERVER
+// =====================
 
-// =======================
-// LANCEMENT SERVEUR
-// =======================
 const PORT = process.env.PORT || 3000;
 
-server.listen(PORT, () => {
-console.log(`🚀 Server running on port ${PORT}`);
+app.get("/", (req,res)=>{
+res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+app.listen(PORT, ()=>{
+console.log("🚀 Timer server running on port " + PORT);
 });
