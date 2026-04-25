@@ -87,7 +87,11 @@ function reset(){
 }
 
 // Connexion WebSocket Render
-const socket = new WebSocket(`wss://${location.host}`);
+const socket = new WebSocket(
+  location.protocol === "https:"
+    ? `wss://${location.host}`
+    : `ws://${location.host}`
+);
 
 socket.onmessage = (msg)=>{
   const data = JSON.parse(msg.data);
