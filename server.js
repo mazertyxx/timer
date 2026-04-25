@@ -9,34 +9,15 @@ app.use(express.static("public"));
 // STATE
 // =====================
 
-let time = 0;
-let running = false;
-let last = Date.now();
-let bonusActive = false;
+let endTime = 0;
+let bonus = false;
 
 // =====================
-// UPDATE TIMER SAFE
+// HELPERS
 // =====================
 
-function update(){
-if(!running) return;
-
-const now = Date.now();
-const diff = Math.floor((now - last) / 1000);
-
-if(diff > 0){
-time -= diff;
-last = now;
-
-```
-if(time <= 0){
-  time = 0;
-  running = false;
-  bonusActive = false;
-}
-```
-
-}
+function now(){
+return Date.now();
 }
 
 // =====================
@@ -44,33 +25,28 @@ if(time <= 0){
 // =====================
 
 app.get("/state",(req,res)=>{
-update();
+const remaining = Math.max(0, Math.floor((endTime - now()) / 1000));
 
 res.json({
-time,
-running,
-bonusActive
+time: remaining,
+running: remaining > 0,
+bonusActive: bonus
 });
 });
 
 // =====================
-// START
+// START (1 min)
 // =====================
 
-function start(){
-time = 60;
-running = true;
-last = Date.now();
-bonusActive = false;
-}
-
-app.get("/start",(req,res)=>{
-start();
+app.post("/start",(req,res)=>{
+endTime = now() + 60 * 1000;
+bonus = false;
 res.send("OK");
 });
 
-app.post("/start",(req,res)=>{
-start();
+app.get("/start",(req,res)=>{
+endTime = now() + 60 * 1000;
+bonus = false;
 res.send("OK");
 });
 
@@ -78,19 +54,15 @@ res.send("OK");
 // +30 SEC
 // =====================
 
-function add30(){
-update();
-time += 30;
-bonusActive = true;
-}
-
-app.get("/30",(req,res)=>{
-add30();
+app.post("/30",(req,res)=>{
+endTime += 30 * 1000;
+bonus = true;
 res.send("OK");
 });
 
-app.post("/30",(req,res)=>{
-add30();
+app.get("/30",(req,res)=>{
+endTime += 30 * 1000;
+bonus = true;
 res.send("OK");
 });
 
@@ -98,19 +70,15 @@ res.send("OK");
 // END
 // =====================
 
-function end(){
-time = 0;
-running = false;
-bonusActive = false;
-}
-
-app.get("/end",(req,res)=>{
-end();
+app.post("/end",(req,res)=>{
+endTime = now();
+bonus = false;
 res.send("OK");
 });
 
-app.post("/end",(req,res)=>{
-end();
+app.get("/end",(req,res)=>{
+endTime = now();
+bonus = false;
 res.send("OK");
 });
 
@@ -125,5 +93,5 @@ res.sendFile(path.join(__dirname,"public","index.html"));
 });
 
 app.listen(PORT,()=>{
-console.log("🚀 Timer OK on port " + PORT);
+console.log("🚀 Timer stable running");
 });
