@@ -1,31 +1,4 @@
-<!DOCTYPE html>
-
-<html>
-<head>
-<meta charset="UTF-8">
-<style>
-body { background:transparent; margin:0; }
-#timer {
-  font-size:120px;
-  color:white;
-  text-align:center;
-}
-#bonus {
-  font-size:40px;
-  color:red;
-  text-align:center;
-  opacity:0;
-}
-</style>
-</head>
-<body>
-
-<div id="timer">01:00</div>
-<div id="bonus">+30 secondes</div>
-
-<script>
-let time = 60;
-let interval;
+let displayTime = 0;
 
 function format(t){
   let m = Math.floor(t/60);
@@ -33,81 +6,31 @@ function format(t){
   return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 
-function start(){
-  clearInterval(interval);
-  time = 60;
-  document.getElementById("timer").style.display="block";
+async function fetchState(){
+  const res = await fetch("/state");
+  const data = await res.json();
 
-  interval = setInterval(()=>{
-    time--;
-    document.getElementById("timer").textContent = format(time);
+  if(!data.running && data.time === 0){
+    document.getElementById("timer").style.display = "none";
+    return;
+  }
 
-    if(time<=0){
-      clearInterval(interval);
-      document.getElementById("timer").style.display="none";
-    }
-  },1000);
+  document.getElementById("timer").style.display = "block";
+
+  // animation si +30
+  if(data.time > displayTime){
+    document.getElementById("timer").style.color = "red";
+    document.getElementById("bonus").style.opacity = 1;
+
+    setTimeout(()=>{
+      document.getElementById("timer").style.color = "white";
+      document.getElementById("bonus").style.opacity = 0;
+    },1000);
+  }
+
+  displayTime = data.time;
+  document.getElementById("timer").textContent = format(data.time);
 }
 
-function add30(){
-  clearInterval(interval);
-  let target = time+30;
-
-  document.getElementById("timer").style.color="red";
-  document.getElementById("bonus").style.opacity=1;
-
-  let up = setInterval(()=>{
-    time++;
-    document.getElementById("timer").textContent=format(time);
-
-    if(time>=target){
-      clearInterval(up);
-      document.getElementById("timer").style.color="white";
-      setTimeout(()=>{document.getElementById("bonus").style.opacity=0},1500);
-      startCountdown();
-    }
-  },50);
-}
-
-function startCountdown(){
-  interval = setInterval(()=>{
-    time--;
-    document.getElementById("timer").textContent=format(time);
-
-    if(time<=0){
-      clearInterval(interval);
-      document.getElementById("timer").style.display="none";
-    }
-  },1000);
-}
-
-function reset(){
-  clearInterval(interval);
-  document.getElementById("timer").style.display="none";
-}
-
-// Connexion WebSocket Render
-const socket = new WebSocket(
-  location.protocol === "https:"
-    ? `wss://${location.host}`
-    : `ws://${location.host}`
-);
-
-socket.onopen = () => {
-  console.log("✅ connecté");
-};
-
-socket.onmessage = (msg)=>{
-  console.log("📩", msg.data);
-
-  const data = JSON.parse(msg.data);
-
-  if(data.event==="start") start();
-  if(data.event==="add30") add30();
-  if(data.event==="reset") reset();
-};
-};
-</script>
-
-</body>
-</html>
+// refresh toutes les 200ms
+setInterval(fetchState, 200);
