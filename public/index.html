@@ -39,58 +39,86 @@ body {
 // 👇 ICI TON CODE
 
 let last = 0;
+let animating = false;
 
 function format(t){
-let m = Math.floor(t/60);
-let s = t%60;
-return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  let m = Math.floor(t/60);
+  let s = t%60;
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+// effet roulage
+function rollTimer(from, to, duration = 600){
+  const timer = document.getElementById("timer");
+
+  let start = from;
+  let diff = to - from;
+  let steps = 30;
+  let i = 0;
+
+  let interval = setInterval(() => {
+    i++;
+    let value = start + Math.floor((diff * i) / steps);
+    timer.textContent = format(value);
+
+    if(i >= steps){
+      clearInterval(interval);
+      animating = false;
+    }
+  }, duration / steps);
 }
 
 function render(time, bonusActive){
 
-const timer = document.getElementById("timer");
-const bonus = document.getElementById("bonus");
+  const timer = document.getElementById("timer");
+  const bonus = document.getElementById("bonus");
 
-if(time <= 0){
-timer.style.display = "none";
-bonus.style.opacity = 0;
-return;
-}
+  if(time <= 0){
+    timer.style.display = "none";
+    bonus.style.opacity = 0;
+    return;
+  }
 
-timer.style.display = "block";
-timer.textContent = format(time);
+  timer.style.display = "block";
 
-if(time < last && bonusActive){
-timer.style.color = "red";
-bonus.style.opacity = 1;
+  // 🔥 +30 animation
+  if(time > last && bonusActive && !animating){
 
-```
-setTimeout(()=>{
-  timer.style.color = "white";
-  bonus.style.opacity = 0;
-},800);
-```
+    animating = true;
 
-}
+    timer.style.color = "red";
+    bonus.style.opacity = 1;
+    bonus.innerText = "+30 secondes";
 
-last = time;
+    let from = last;
+    let to = time;
+
+    rollTimer(from, to);
+
+    setTimeout(() => {
+      timer.style.color = "white";
+      bonus.style.opacity = 0;
+    }, 800);
+  }
+
+  // normal update si pas animation
+  if(!animating){
+    timer.textContent = format(time);
+  }
+
+  last = time;
 }
 
 async function loop(){
-try {
-const res = await fetch("/state");
-const data = await res.json();
+  try {
+    const res = await fetch("/state");
+    const data = await res.json();
 
-```
-render(data.time, data.bonusActive);
-```
-
-} catch(e){
-console.log("error", e);
-}
+    render(data.time, data.bonusActive);
+  } catch(e){}
 }
 
-setInterval(loop, 100); // ultra fluide
+setInterval(loop, 100);
 
 
 </script>
