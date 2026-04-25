@@ -1,36 +1,40 @@
 const express = require("express");
 const app = express();
+const cors = require("cors");
 const path = require("path");
 
+app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
 // =====================
-// ⏱ TIMER STATE
+// ⏱ STATE
 // =====================
 
-let time = 0;          // secondes restantes
+let time = 0;
 let running = false;
-let lastUpdate = Date.now();
+let last = Date.now();
+let bonusActive = false;
 
 // =====================
-// 🧠 UPDATE TIMER
+// UPDATE TIMER
 // =====================
 
-function updateTimer(){
-if (!running) return;
+function update(){
+if(!running) return;
 
 const now = Date.now();
-const diff = Math.floor((now - lastUpdate) / 1000);
+const diff = Math.floor((now - last)/1000);
 
-if (diff > 0) {
+if(diff > 0){
 time -= diff;
-lastUpdate = now;
+last = now;
 
 ```
-if (time <= 0) {
+if(time <= 0){
   time = 0;
   running = false;
+  bonusActive = false;
 }
 ```
 
@@ -38,63 +42,90 @@ if (time <= 0) {
 }
 
 // =====================
-// 🌐 GET STATE (overlay)
+// STATE FOR FRONT
 // =====================
 
-app.get("/state", (req,res)=>{
-updateTimer();
+app.get("/state",(req,res)=>{
+update();
 
 res.json({
 time,
-running
+running,
+bonusActive
 });
 });
 
 // =====================
-// ▶️ START (1 min)
+// START (1 min)
 // =====================
 
-app.post("/start", (req,res)=>{
+function startTimer(){
 time = 60;
 running = true;
-lastUpdate = Date.now();
+last = Date.now();
+bonusActive = false;
+}
 
-res.json({ ok:true });
+app.get("/start",(req,res)=>{
+startTimer();
+res.send("OK");
 });
 
-// START
-app.get("/start", (req,res)=>{
-time = 60;
-running = true;
-lastUpdate = Date.now();
-res.send("START OK");
+app.post("/start",(req,res)=>{
+startTimer();
+res.send("OK");
 });
 
-// +30
-app.get("/30", (req,res)=>{
-updateTimer();
+// =====================
+// +30 SEC
+// =====================
+
+function add30(){
+update();
 time += 30;
-res.send("+30 OK");
+bonusActive = true;
+}
+
+app.get("/30",(req,res)=>{
+add30();
+res.send("OK");
 });
 
+app.post("/30",(req,res)=>{
+add30();
+res.send("OK");
+});
+
+// =====================
 // END
-app.get("/end", (req,res)=>{
+// =====================
+
+function endTimer(){
 time = 0;
 running = false;
-res.send("END OK");
+bonusActive = false;
+}
+
+app.get("/end",(req,res)=>{
+endTimer();
+res.send("OK");
 });
 
+app.post("/end",(req,res)=>{
+endTimer();
+res.send("OK");
+});
 
 // =====================
-// 🚀 SERVER
+// SERVER
 // =====================
 
 const PORT = process.env.PORT || 3000;
 
-app.get("/", (req,res)=>{
-res.sendFile(path.join(__dirname, "public", "index.html"));
+app.get("/",(req,res)=>{
+res.sendFile(path.join(__dirname,"public","index.html"));
 });
 
-app.listen(PORT, ()=>{
-console.log("🚀 Timer server running on port " + PORT);
+app.listen(PORT,()=>{
+console.log("🚀 Timer running on "+PORT);
 });
