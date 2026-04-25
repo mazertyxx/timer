@@ -16,7 +16,7 @@ body {
   font-size:120px;
   color:white;
   text-align:center;
-  font-family:Arial, sans-serif;
+  font-family:Arial;
 }
 
 #bonus {
@@ -36,7 +36,9 @@ body {
 
 <script>
 
-let displayTime = 0;
+// 👇 ICI TON CODE
+
+let lastTime = 0;
 
 function format(t){
   let m = Math.floor(t/60);
@@ -44,33 +46,37 @@ function format(t){
   return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 
-async function fetchState(){
+async function update(){
   const res = await fetch("/state");
   const data = await res.json();
 
-  if(!data.running && data.time === 0){
-    document.getElementById("timer").style.display = "none";
+  const timer = document.getElementById("timer");
+  const bonus = document.getElementById("bonus");
+
+  if(data.time <= 0 && !data.running){
+    timer.style.display = "none";
+    bonus.style.opacity = 0;
     return;
   }
 
-  document.getElementById("timer").style.display = "block";
+  timer.style.display = "block";
+  timer.textContent = format(data.time);
 
-  if(data.time > displayTime){
-    document.getElementById("timer").style.color = "red";
-    document.getElementById("bonus").style.opacity = 1;
+  if(data.bonusActive && data.time > lastTime){
+    timer.style.color = "red";
+    bonus.style.opacity = 1;
+    bonus.innerText = "+30 secondes";
 
     setTimeout(()=>{
-      document.getElementById("timer").style.color = "white";
-      document.getElementById("bonus").style.opacity = 0;
+      timer.style.color = "white";
+      bonus.style.opacity = 0;
     },1000);
   }
 
-  displayTime = data.time;
-  document.getElementById("timer").textContent = format(data.time);
+  lastTime = data.time;
 }
 
-// refresh
-setInterval(fetchState, 200);
+setInterval(update,200);
 
 </script>
 
