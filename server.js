@@ -1,14 +1,12 @@
 const express = require("express");
 const app = express();
-const cors = require("cors");
 const path = require("path");
 
-app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
 // =====================
-// ⏱ STATE
+// STATE
 // =====================
 
 let time = 0;
@@ -17,14 +15,14 @@ let last = Date.now();
 let bonusActive = false;
 
 // =====================
-// UPDATE TIMER
+// UPDATE TIMER SAFE
 // =====================
 
 function update(){
 if(!running) return;
 
 const now = Date.now();
-const diff = Math.floor((now - last)/1000);
+const diff = Math.floor((now - last) / 1000);
 
 if(diff > 0){
 time -= diff;
@@ -42,7 +40,7 @@ if(time <= 0){
 }
 
 // =====================
-// STATE FOR FRONT
+// STATE API
 // =====================
 
 app.get("/state",(req,res)=>{
@@ -56,10 +54,10 @@ bonusActive
 });
 
 // =====================
-// START (1 min)
+// START
 // =====================
 
-function startTimer(){
+function start(){
 time = 60;
 running = true;
 last = Date.now();
@@ -67,12 +65,12 @@ bonusActive = false;
 }
 
 app.get("/start",(req,res)=>{
-startTimer();
+start();
 res.send("OK");
 });
 
 app.post("/start",(req,res)=>{
-startTimer();
+start();
 res.send("OK");
 });
 
@@ -100,19 +98,19 @@ res.send("OK");
 // END
 // =====================
 
-function endTimer(){
+function end(){
 time = 0;
 running = false;
 bonusActive = false;
 }
 
 app.get("/end",(req,res)=>{
-endTimer();
+end();
 res.send("OK");
 });
 
 app.post("/end",(req,res)=>{
-endTimer();
+end();
 res.send("OK");
 });
 
@@ -127,5 +125,5 @@ res.sendFile(path.join(__dirname,"public","index.html"));
 });
 
 app.listen(PORT,()=>{
-console.log("🚀 Timer running on "+PORT);
+console.log("🚀 Timer OK on port " + PORT);
 });
