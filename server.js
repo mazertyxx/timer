@@ -62,27 +62,28 @@ lastUpdate = Date.now();
 res.json({ ok:true });
 });
 
-// =====================
-// ➕ +30 SECONDES
-// =====================
+// START
+app.get("/start", (req,res)=>{
+time = 60;
+running = true;
+lastUpdate = Date.now();
+res.send("START OK");
+});
 
-app.post("/30", (req,res)=>{
+// +30
+app.get("/30", (req,res)=>{
 updateTimer();
 time += 30;
-
-res.json({ ok:true });
+res.send("+30 OK");
 });
 
-// =====================
-// ❌ END
-// =====================
-
-app.post("/end", (req,res)=>{
+// END
+app.get("/end", (req,res)=>{
 time = 0;
 running = false;
-
-res.json({ ok:true });
+res.send("END OK");
 });
+
 
 // =====================
 // 🚀 SERVER
