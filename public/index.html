@@ -38,45 +38,60 @@ body {
 
 // 👇 ICI TON CODE
 
-let lastTime = 0;
+let last = 0;
 
 function format(t){
-  let m = Math.floor(t/60);
-  let s = t%60;
-  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+let m = Math.floor(t/60);
+let s = t%60;
+return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 
-async function update(){
-  const res = await fetch("/state");
-  const data = await res.json();
+function render(time, bonusActive){
 
-  const timer = document.getElementById("timer");
-  const bonus = document.getElementById("bonus");
+const timer = document.getElementById("timer");
+const bonus = document.getElementById("bonus");
 
-  if(data.time <= 0 && !data.running){
-    timer.style.display = "none";
-    bonus.style.opacity = 0;
-    return;
-  }
-
-  timer.style.display = "block";
-  timer.textContent = format(data.time);
-
-  if(data.bonusActive && data.time > lastTime){
-    timer.style.color = "red";
-    bonus.style.opacity = 1;
-    bonus.innerText = "+30 secondes";
-
-    setTimeout(()=>{
-      timer.style.color = "white";
-      bonus.style.opacity = 0;
-    },1000);
-  }
-
-  lastTime = data.time;
+if(time <= 0){
+timer.style.display = "none";
+bonus.style.opacity = 0;
+return;
 }
 
-setInterval(update,200);
+timer.style.display = "block";
+timer.textContent = format(time);
+
+if(time < last && bonusActive){
+timer.style.color = "red";
+bonus.style.opacity = 1;
+
+```
+setTimeout(()=>{
+  timer.style.color = "white";
+  bonus.style.opacity = 0;
+},800);
+```
+
+}
+
+last = time;
+}
+
+async function loop(){
+try {
+const res = await fetch("/state");
+const data = await res.json();
+
+```
+render(data.time, data.bonusActive);
+```
+
+} catch(e){
+console.log("error", e);
+}
+}
+
+setInterval(loop, 100); // ultra fluide
+
 
 </script>
 
