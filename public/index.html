@@ -1,3 +1,41 @@
+<!DOCTYPE html>
+
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Timer</title>
+
+<style>
+body {
+  margin:0;
+  background:transparent;
+  overflow:hidden;
+}
+
+#timer {
+  font-size:120px;
+  color:white;
+  text-align:center;
+  font-family:Arial, sans-serif;
+}
+
+#bonus {
+  font-size:40px;
+  color:red;
+  text-align:center;
+  opacity:0;
+}
+</style>
+
+</head>
+
+<body>
+
+<div id="timer">01:00</div>
+<div id="bonus">+30 secondes</div>
+
+<script>
+
 let displayTime = 0;
 
 function format(t){
@@ -17,7 +55,6 @@ async function fetchState(){
 
   document.getElementById("timer").style.display = "block";
 
-  // animation si +30
   if(data.time > displayTime){
     document.getElementById("timer").style.color = "red";
     document.getElementById("bonus").style.opacity = 1;
@@ -32,5 +69,10 @@ async function fetchState(){
   document.getElementById("timer").textContent = format(data.time);
 }
 
-// refresh toutes les 200ms
+// refresh
 setInterval(fetchState, 200);
+
+</script>
+
+</body>
+</html>
